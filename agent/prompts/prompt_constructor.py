@@ -73,6 +73,23 @@ class PromptConstructor(object):
                 message += f"Observation\n:{current}\n\n"
                 message += "Action:"
                 return message
+            elif self.lm_config.mode == "vllm_chat":
+                message = [{"role": "system", "content": intro}]
+                for (x, y) in examples:
+                    message.append(
+                        {
+                            "role": "user",
+                            "content": x,
+                        }
+                    )
+                    message.append(
+                        {
+                            "role": "assistant",
+                            "content": y,
+                        }
+                    )
+                message.append({"role": "user", "content": current})
+                return message
             else:
                 raise ValueError(
                     f"OpenAI models do not support mode {self.lm_config.mode}"
