@@ -1,7 +1,7 @@
 from typing import Any
 
 import tiktoken
-from transformers import LlamaTokenizer  # type: ignore
+from transformers import LlamaTokenizer, AutoTokenizer  # type: ignore
 
 
 class Tokenizer(object):
@@ -14,6 +14,11 @@ class Tokenizer(object):
             self.tokenizer.add_special_tokens = False  # type: ignore[attr-defined]
             self.tokenizer.add_bos_token = False  # type: ignore[attr-defined]
             self.tokenizer.add_eos_token = False  # type: ignore[attr-defined]
+        elif provider == "vllm":
+            if model_name in ["lemur-70b-chat-v1"]:
+                self.tokenizer = AutoTokenizer.from_pretrained("OpenLemur/lemur-70b-chat-v1")
+            else:
+                raise NotImplementedError
         else:
             raise NotImplementedError
 

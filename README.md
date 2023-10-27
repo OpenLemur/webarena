@@ -99,7 +99,7 @@ python browser_env/auto_login.py
 6. Launch the evaluation
 ```bash
 python run.py \
-  --instruction_path agent/prompts/jsons/p_cot_id_actree_2s.py \ # this is the reasoning agent prompt we used in the paper
+  --instruction_path agent/prompts/jsons/p_cot_id_actree_2s.json \ # this is the reasoning agent prompt we used in the paper
   --test_start_idx 0 \
   --test_end_idx 1 \
   --model gpt-3.5-turbo \
@@ -108,29 +108,32 @@ python run.py \
 This script will run the first example with GPT-3.5 reasoning agent. The trajectory will be saved in `<your_result_dir>/0.html`
 
 To **run lemur on WebArena**, please follow the instructions below:
-1. run Lemur with vLLM and then set the environment variable `OPENAI_API_BASE` like:
+1. run Lemur with vLLM and then set the environment variable `OPENAI_API_BASE` and `OPENAI_API_KEY` like:
 ```bash
 export OPENAI_API_BASE=<your vllm api address>
+export OPENAI_API_KEY=<arbitrary things to eliminate errors>
 ```
 2. run the evaluation like follows
 ```bash
 python run.py \
-  --instruction_path agent/prompts/jsons/p_cot_id_actree_2s.py \ # this is the reasoning agent prompt we used in the paper
+  --instruction_path agent/prompts/jsons/p_cot_id_actree_2s.json \
   --test_start_idx 0 \
   --test_end_idx 1 \
   --setting default \
   --model lemur-70b-chat-v1 \
+  --provider vllm \
   --result_dir <your_result_dir>
 ```
 
   Note that the scripts above is in default setting (same setting in original WebArena paper). To run in code generation setting, use the scripts like follows
 ```bash
 python run.py \
-  --instruction_path agent/prompts/jsons/p_codegen_cot_id_actree_2s_lemur.py \ # this is the reasoning agent prompt we used in the paper
+  --instruction_path agent/prompts/jsons/p_codegen_cot_id_actree_2s.json \
   --test_start_idx 0 \
   --test_end_idx 1 \
   --setting codegen \
   --model lemur-70b-chat-v1 \
+  --provider vllm \
   --result_dir <your_result_dir>
 ```
 
