@@ -106,11 +106,13 @@ class PromptAgent(Agent):
         action_set_tag: str,
         lm_config: lm_config.LMConfig,
         prompt_constructor: PromptConstructor,
+        setting: str,
     ) -> None:
         super().__init__()
         self.lm_config = lm_config
         self.prompt_constructor = prompt_constructor
         self.action_set_tag = action_set_tag
+        self.setting = setting
 
     def set_action_set_tag(self, tag: str) -> None:
         self.action_set_tag = tag
@@ -136,7 +138,7 @@ class PromptAgent(Agent):
                     response
                 )
                 if self.action_set_tag == "id_accessibility_tree":
-                    action = create_id_based_action(parsed_response)
+                    action = create_id_based_action(parsed_response, self.setting)
                 elif self.action_set_tag == "playwright":
                     action = create_playwright_action(parsed_response)
                 else:
@@ -174,6 +176,7 @@ def construct_agent(args: argparse.Namespace) -> Agent:
             action_set_tag=args.action_set_tag,
             lm_config=llm_config,
             prompt_constructor=prompt_constructor,
+            setting=args.setting
         )
     else:
         raise NotImplementedError(

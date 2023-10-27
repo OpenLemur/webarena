@@ -1499,86 +1499,177 @@ def create_playwright_action(playwright_code: str) -> Action:
 
 
 @beartype
-def create_id_based_action(action_str: str) -> Action:
+def create_id_based_action(action_str: str, setting: str) -> Action:
     """Main function to return individual id based action"""
-    action_str = action_str.strip()
-    action = (
-        action_str.split("[")[0].strip()
-        if "[" in action_str
-        else action_str.split()[0].strip()
-    )
-    match action:
-        case "click":
-            match = re.search(r"click ?\[(\d+)\]", action_str)
-            if not match:
-                raise ActionParsingError(f"Invalid click action {action_str}")
-            element_id = match.group(1)
-            return create_click_action(element_id=element_id)
-        case "hover":
-            match = re.search(r"hover ?\[(\d+)\]", action_str)
-            if not match:
-                raise ActionParsingError(f"Invalid hover action {action_str}")
-            element_id = match.group(1)
-            return create_hover_action(element_id=element_id)
-        case "type":
-            # add default enter flag
-            if not (action_str.endswith("[0]") or action_str.endswith("[1]")):
-                action_str += " [1]"
 
-            match = re.search(
-                r"type ?\[(\d+)\] ?\[(.+)\] ?\[(\d+)\]", action_str
-            )
-            if not match:
-                raise ActionParsingError(f"Invalid type action {action_str}")
-            element_id, text, enter_flag = (
-                match.group(1),
-                match.group(2),
-                match.group(3),
-            )
-            if enter_flag == "1":
-                text += "\n"
-            return create_type_action(text=text, element_id=element_id)
-        case "press":
-            match = re.search(r"press ?\[(.+)\]", action_str)
-            if not match:
-                raise ActionParsingError(f"Invalid press action {action_str}")
-            key_comb = match.group(1)
-            return create_key_press_action(key_comb=key_comb)
-        case "scroll":
-            # up or down
-            match = re.search(r"scroll ?\[?(up|down)\]?", action_str)
-            if not match:
-                raise ActionParsingError(f"Invalid scroll action {action_str}")
-            direction = match.group(1)
-            return create_scroll_action(direction=direction)
-        case "goto":
-            match = re.search(r"goto ?\[(.+)\]", action_str)
-            if not match:
-                raise ActionParsingError(f"Invalid goto action {action_str}")
-            url = match.group(1)
-            return create_goto_url_action(url=url)
-        case "new_tab":
-            return create_new_tab_action()
-        case "go_back":
-            return create_go_back_action()
-        case "go_forward":
-            return create_go_forward_action()
-        case "tab_focus":
-            match = re.search(r"tab_focus ?\[(\d+)\]", action_str)
-            if not match:
-                raise ActionParsingError(
-                    f"Invalid tab_focus action {action_str}"
+    # functions to be eval in codegen setting to extract the params
+    def click(id: int):
+        return id
+    def type(id: int, content: str, press_enter_after: bool):
+        return id, content, press_enter_after
+    def hover(id: int):
+        return id
+    def press(key_comb: str):
+        return key_comb
+    def scroll(direction: str):
+        if direction in ["up", "down"]:
+            return direction
+        else:
+            raise ActionParsingError(f"Invalid scroll direction {direction}")
+    def tab_focus(tab_index: int):
+        return tab_index
+    def goto(url: str):
+        return url
+    def stop(answer: str):
+        return answer
+    
+    if setting == "default":
+        action_str = action_str.strip()
+        action = (
+            action_str.split("[")[0].strip()
+            if "[" in action_str
+            else action_str.split()[0].strip()
+        )
+        match action:
+            case "click":
+                match = re.search(r"click ?\[(\d+)\]", action_str)
+                if not match:
+                    raise ActionParsingError(f"Invalid click action {action_str}")
+                element_id = match.group(1)
+                return create_click_action(element_id=element_id)
+            case "hover":
+                match = re.search(r"hover ?\[(\d+)\]", action_str)
+                if not match:
+                    raise ActionParsingError(f"Invalid hover action {action_str}")
+                element_id = match.group(1)
+                return create_hover_action(element_id=element_id)
+            case "type":
+                # add default enter flag
+                if not (action_str.endswith("[0]") or action_str.endswith("[1]")):
+                    action_str += " [1]"
+
+                match = re.search(
+                    r"type ?\[(\d+)\] ?\[(.+)\] ?\[(\d+)\]", action_str
                 )
-            page_number = int(match.group(1))
-            return create_page_focus_action(page_number)
-        case "close_tab":
-            return create_page_close_action()
-        case "stop":  # stop answer
-            match = re.search(r"stop ?\[(.+)\]", action_str)
-            if not match:  # some tasks don't require an answer
-                answer = ""
-            else:
-                answer = match.group(1)
-            return create_stop_action(answer)
-
-    raise ActionParsingError(f"Invalid action {action_str}")
+                if not match:
+                    raise ActionParsingError(f"Invalid type action {action_str}")
+                element_id, text, enter_flag = (
+                    match.group(1),
+                    match.group(2),
+                    match.group(3),
+                )
+                if enter_flag == "1":
+                    text += "\n"
+                return create_type_action(text=text, element_id=element_id)
+            case "press":
+                match = re.search(r"press ?\[(.+)\]", action_str)
+                if not match:
+                    raise ActionParsingError(f"Invalid press action {action_str}")
+                key_comb = match.group(1)
+                return create_key_press_action(key_comb=key_comb)
+            case "scroll":
+                # up or down
+                match = re.search(r"scroll ?\[?(up|down)\]?", action_str)
+                if not match:
+                    raise ActionParsingError(f"Invalid scroll action {action_str}")
+                direction = match.group(1)
+                return create_scroll_action(direction=direction)
+            case "goto":
+                match = re.search(r"goto ?\[(.+)\]", action_str)
+                if not match:
+                    raise ActionParsingError(f"Invalid goto action {action_str}")
+                url = match.group(1)
+                return create_goto_url_action(url=url)
+            case "new_tab":
+                return create_new_tab_action()
+            case "go_back":
+                return create_go_back_action()
+            case "go_forward":
+                return create_go_forward_action()
+            case "tab_focus":
+                match = re.search(r"tab_focus ?\[(\d+)\]", action_str)
+                if not match:
+                    raise ActionParsingError(
+                        f"Invalid tab_focus action {action_str}"
+                    )
+                page_number = int(match.group(1))
+                return create_page_focus_action(page_number)
+            case "close_tab":
+                return create_page_close_action()
+            case "stop":  # stop answer
+                match = re.search(r"stop ?\[(.+)\]", action_str)
+                if not match:  # some tasks don't require an answer
+                    answer = ""
+                else:
+                    answer = match.group(1)
+                return create_stop_action(answer)
+        raise ActionParsingError(f"Invalid action {action_str}")
+    elif setting == "codegen":
+        action_str = action_str.strip()
+        action = (
+            action_str.split("(")[0].strip()
+            if "(" in action_str
+            else action_str.split()[0].strip()
+        )
+        match action:
+            case "click":
+                try:
+                    element_id = eval(action_str)
+                    return create_click_action(element_id=str(element_id))
+                except:
+                    raise ActionParsingError(f"Invalid click action {action_str}")
+            case "hover":
+                try:
+                    element_id = eval(action_str)
+                    return create_hover_action(element_id=str(element_id))
+                except:
+                    raise ActionParsingError(f"Invalid hover action {action_str}")
+            case "type":
+                try:
+                    element_id, text, press_enter = eval(action_str)
+                    if press_enter:
+                        text += "\n"
+                    return create_type_action(text=text, element_id=str(element_id))
+                except:
+                    raise ActionParsingError(f"Invalid type action {action_str}")
+            case "press":
+                try:
+                    key_comb = eval(action_str)
+                    return create_key_press_action(key_comb=key_comb)
+                except:
+                    raise ActionParsingError(f"Invalid press action {action_str}")
+            case "scroll":
+                try:
+                    direction = eval(action_str)
+                    return create_scroll_action(direction=direction)
+                except:
+                    raise ActionParsingError(f"Invalid scroll action {action_str}")
+            case "goto":
+                try:
+                    url = eval(action_str)
+                    return create_goto_url_action(url=url)
+                except:
+                    raise ActionParsingError(f"Invalid goto action {action_str}")
+            case "new_tab":
+                return create_new_tab_action()
+            case "go_back":
+                return create_go_back_action()
+            case "go_forward":
+                return create_go_forward_action()
+            case "tab_focus":
+                try:
+                    page_number = eval(action_str)
+                    return create_page_focus_action(page_number=page_number)
+                except:
+                    raise ActionParsingError(
+                        f"Invalid tab_focus action {action_str}"
+                    )
+            case "close_tab":
+                return create_page_close_action()
+            case "stop":
+                try:
+                    answer = eval(action_str)
+                    return create_stop_action(answer=answer)
+                except:
+                    return create_stop_action("")
+        raise ActionParsingError(f"Invalid action {action_str}")
