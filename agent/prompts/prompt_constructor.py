@@ -275,3 +275,38 @@ class CoTPromptConstructor(PromptConstructor):
             raise ActionParsingError(
                 f'Cannot find the answer phrase "{self.answer_phrase}" in "{response}"'
             )
+
+
+class LemurCoTPromptConstructor(CoTPromptConstructor):
+    def get_lm_api_input(
+        self, intro: str, examples: list[tuple[str, str]], current: str
+    ) -> APIInput:
+
+        """Return the require format for an API"""
+        message: list[dict[str, str]] | str
+        if self.lm_config.model in ["lemur-70b-chat-v1"]:
+            if self.lm_config.mode == "chat":
+                message = [{"role": "system", "content": intro}]
+                for (x, y) in examples:
+                    message.append(
+                        {
+                            "role": "user",
+                            "content": x,
+                        }
+                    )
+                    message.append(
+                        {
+                            "role": "assistant",
+                            "content": y,
+                        }
+                    )
+                message.append({"role": "user", "content": current})
+                return message
+            else:
+                raise ValueError(
+                    f"Lemur do not support mode {self.lm_config.mode}"
+                )
+        else:
+            raise NotImplementedError(
+                f"Model {self.lm_config.model} not implemented"
+            )    
