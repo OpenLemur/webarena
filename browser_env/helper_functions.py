@@ -66,48 +66,90 @@ def get_action_description(
     observation_metadata: dict[str, ObservationMetadata],
     action_set_tag: str,
     prompt_constructor: PromptConstructor | None,
+    setting: str,
 ) -> str:
     """Generate the text version of the predicted actions to store in action history for prompt use.
     May contain hint information to recover from the failures"""
-
-    match action_set_tag:
-        case "id_accessibility_tree":
-            text_meta_data = observation_metadata["text"]
-            if action["action_type"] in [
-                ActionTypes.CLICK,
-                ActionTypes.HOVER,
-                ActionTypes.TYPE,
-            ]:
-                action_name = str(action["action_type"]).split(".")[1].lower()
-                if action["element_id"] in text_meta_data["obs_nodes_info"]:
-                    node_content = text_meta_data["obs_nodes_info"][
-                        action["element_id"]
-                    ]["text"]
-                    node_content = " ".join(node_content.split()[1:])
-                    action_str = action2str(
-                        action, action_set_tag, node_content
-                    )
+    if setting == "default":
+        match action_set_tag:
+            case "id_accessibility_tree":
+                text_meta_data = observation_metadata["text"]
+                if action["action_type"] in [
+                    ActionTypes.CLICK,
+                    ActionTypes.HOVER,
+                    ActionTypes.TYPE,
+                ]:
+                    action_name = str(action["action_type"]).split(".")[1].lower()
+                    if action["element_id"] in text_meta_data["obs_nodes_info"]:
+                        node_content = text_meta_data["obs_nodes_info"][
+                            action["element_id"]
+                        ]["text"]
+                        node_content = " ".join(node_content.split()[1:])
+                        action_str = action2str(
+                            action, action_set_tag, node_content
+                        )
+                    else:
+                        action_str = f"Attempt to perfom \"{action_name}\" on element \"[{action['element_id']}]\" but no matching element found. Please check the observation more carefully."
                 else:
-                    action_str = f"Attempt to perfom \"{action_name}\" on element \"[{action['element_id']}]\" but no matching element found. Please check the observation more carefully."
-            else:
-                if (
-                    action["action_type"] == ActionTypes.NONE
-                    and prompt_constructor is not None
-                ):
-                    action_splitter = prompt_constructor.instruction[
-                        "meta_data"
-                    ]["action_splitter"]
-                    action_str = f'The previous prediction you issued was "{action["raw_prediction"]}". However, the format was incorrect. Ensure that the action is wrapped inside a pair of {action_splitter} and enclose arguments within [] as follows: {action_splitter}action [arg] ...{action_splitter}.'
+                    if (
+                        action["action_type"] == ActionTypes.NONE
+                        and prompt_constructor is not None
+                    ):
+                        action_splitter = prompt_constructor.instruction[
+                            "meta_data"
+                        ]["action_splitter"]
+                        action_str = f'The previous prediction you issued was "{action["raw_prediction"]}". However, the format was incorrect. Ensure that the action is wrapped inside a pair of {action_splitter} and enclose arguments within [] as follows: {action_splitter}action [arg] ...{action_splitter}.'
+                    else:
+                        action_str = action2str(action, action_set_tag, "")
+
+            case "playwright":
+                action_str = action["pw_code"]
+
+            case _:
+                raise ValueError(f"Unknown action type {action['action_type']}")
+
+        return action_str
+    elif setting == "codegen":
+        match action_set_tag:
+            case "id_accessibility_tree":
+                text_meta_data = observation_metadata["text"]
+                if action["action_type"] in [
+                    ActionTypes.CLICK,
+                    ActionTypes.HOVER,
+                    ActionTypes.TYPE,
+                ]:
+                    action_name = str(action["action_type"]).split(".")[1].lower()
+                    if action["element_id"] in text_meta_data["obs_nodes_info"]:
+                        node_content = text_meta_data["obs_nodes_info"][
+                            action["element_id"]
+                        ]["text"]
+                        node_content = " ".join(node_content.split()[1:])
+                        action_str = action2str(
+                            action, action_set_tag, node_content, setting
+                        )
+                    else:
+                        action_str = f"Attempt to perfom \"{action_name}\" on element \"[{action['element_id']}]\" but no matching element found. Please check the observation more carefully."
                 else:
-                    action_str = action2str(action, action_set_tag, "")
+                    if (
+                        action["action_type"] == ActionTypes.NONE
+                        and prompt_constructor is not None
+                    ):
+                        action_splitter = prompt_constructor.instruction[
+                            "meta_data"
+                        ]["action_splitter"]
+                        action_str = f'The previous prediction you issued was "{action["raw_prediction"]}". However, the format was incorrect. Ensure that the action is wrapped inside a pair of {action_splitter} and call it as a python function and enclose arguments within () as follows: {action_splitter}action(param1, param2...){action_splitter}.'
+                    else:
+                        action_str = action2str(action, action_set_tag, "", setting)
 
-        case "playwright":
-            action_str = action["pw_code"]
+            case "playwright":
+                action_str = action["pw_code"]
 
-        case _:
-            raise ValueError(f"Unknown action type {action['action_type']}")
+            case _:
+                raise ValueError(f"Unknown action type {action['action_type']}")
 
-    return action_str
+        return action_str
+    else:
+        raise NotImplementedError(f"Unimplemented setting {setting}")
 
 
 class RenderHelper(object):

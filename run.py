@@ -307,7 +307,8 @@ def test(
                     action,
                     state_info["info"]["observation_metadata"],
                     action_set_tag=args.action_set_tag,
-                    prompt_constructor=agent.prompt_constructor
+                    prompt_constructor=agent.prompt_constructor,
+                    setting=args.setting
                     if isinstance(agent, PromptAgent)
                     else None,
                 )
