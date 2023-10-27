@@ -107,7 +107,7 @@ python run.py \
 ```
 This script will run the first example with GPT-3.5 reasoning agent. The trajectory will be saved in `<your_result_dir>/0.html`
 
-To **run lemur on WebArena**, please follow the instructions below:
+To **evaluate Lemur on WebArena**, please follow the instructions below:
 1. run Lemur with vLLM and then set the environment variable `OPENAI_API_BASE` and `OPENAI_API_KEY` like:
 ```bash
 export OPENAI_API_BASE=<your vllm api address>
@@ -125,7 +125,7 @@ python run.py \
   --result_dir <your_result_dir>
 ```
 
-  Note that the scripts above is in default setting (same setting in original WebArena paper). To run in code generation setting, use the scripts like follows
+  Note that the scripts above is in default setting (same setting in original WebArena paper). To run in code generation setting as defined in Lemur paper, use the scripts like follows
 ```bash
 python run.py \
   --instruction_path agent/prompts/jsons/p_codegen_cot_id_actree_2s.json \
